@@ -124,12 +124,84 @@ W = [
  (11, "Reliability: duplicates are not re-processed", "Re-sending an already-processed event is answered from the action log — no AI call, no task, no alert.",
   [((1, 63, 30, 9), "status: duplicate"), ((1, 26.5, 30, 18.5), "0.19 s end to end"), ((1, 80, 42, 9), "AI cost $0")]),
 ]
-secs = [f"""<section class="cover"><div class="k">INFO7375 · Assignment 4 · Demo</div><h1>Screenshot walkthrough</h1>
-<p class="sub" style="font-size:12pt;max-width:8in">Madison Action Layer v2: how the AI makes decisions, what it produces, how it fails safely and how far it scales. All screenshots from real runs on 2026-10-09.</p>
-<div class="idx">{''.join(f'<div><b>{i}</b>{e(t_)}</div>' for i, (_, t_, *_r) in enumerate(W, 1))}</div>
-<div class="meta"><div><b>Author</b> Mayank Bhadrasen</div><div><b>Stack</b> n8n 2.12.3 (self-hosted) + Claude Haiku 4.5</div><div><b>Integrations</b> HubSpot · Slack · Google Sheets · Gmail</div></div></section>"""]
+PITCH_CSS = """
+.hook { color:var(--ink); font-size:21pt; line-height:1.18; font-weight:800; margin:6px 0 6px; max-width:9.4in; }
+.hook em { font-style:normal; color:var(--hl); }
+.lede { font-size:11pt; color:#3d4452; margin:0 0 12px; max-width:9.2in; line-height:1.4; }
+.cols3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+.pcard { background:#f4f5f7; border-radius:8px; padding:10px 13px; line-height:1.4; font-size:9.4pt; }
+.pcard h3 { margin:0 0 4px; font-size:8pt; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); }
+.pcard.solution { background:var(--accent); color:#fff; } .pcard.solution h3 { color:#99f6e4; }
+.steps { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:12px 0; }
+.step { border-top:3px solid var(--ink); padding-top:6px; font-size:9pt; line-height:1.35; } .step b { display:block; color:var(--ink); font-size:10pt; }
+.step.ai { border-top-color:var(--hl); } .step i { font-style:normal; color:var(--hl); font-weight:700; font-size:7.6pt; letter-spacing:.08em; }
+.kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+.kpi { background:var(--ink); color:#cbd5e1; border-radius:8px; padding:9px 12px; font-size:8.6pt; border-top:3px solid var(--hl); }
+.kpi b { display:block; color:#fff; font-size:17pt; line-height:1.15; }
+.value { margin-top:12px; background:#fff7ed; border-left:4px solid var(--hl); border-radius:4px; padding:9px 14px; font-size:10.6pt; color:var(--ink); line-height:1.4; }
+.value strong { color:#c2410c; }
+.big { color:var(--ink); font-size:26pt; line-height:1.12; font-weight:800; margin:8px 0 14px; max-width:9.4in; } .big em { font-style:normal; color:var(--hl); }
+.panel.dark { background:var(--ink); color:#e2e8f0; border:none; } .panel.dark h3 { color:#fff; }
+.cta { margin-top:18px; display:flex; gap:28px; align-items:center; border-top:1px solid var(--line); padding-top:12px; font-size:10pt; }
+.cta b { color:var(--ink); }
+.beyond { margin-top:12px; } .beyond h3 { margin:0 0 6px; font-size:8pt; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); }
+.beyond .cols3 div { border-left:3px solid var(--accent); padding:2px 0 2px 10px; font-size:9.2pt; line-height:1.38; } .beyond b { color:var(--ink); }"""
+CSS = CSS + PITCH_CSS
+
+pitch = """<section><div class="k">The pitch</div>
+<div class="hook">AI already writes the ads. <em>Madison Action Layer makes sure they ship.</em></div>
+<p class="lede">Every new ad variant is checked, judged by Claude and turned into a HubSpot task and a Slack alert for the right team in about 7 seconds, for less than half a cent. People only step in when their judgement is actually needed.</p>
+<div class="cols3">
+<div class="pcard"><h3>The problem</h3>Madison's Content Agent writes and quality-checks ad variants, and then they sit in a CSV. Someone still has to read each one, decide, file a CRM task and tell the team. Marketers lose about <b>10 hours a week (26% of their time)</b> to handoffs like this (DoubleVerify 2025, 1,970 marketers).</div>
+<div class="pcard solution"><h3>The solution</h3>An action layer between AI content and the people who ship it. Claude scores each ad against its channel's real limits, flags risks with the exact words, decides <b>approve, review or block</b>, picks the owner, and writes the fix, the task and the alert.</div>
+<div class="pcard"><h3>Why you can trust it</h3>Claude must answer in a strict schema, and every answer is validated before anything is sent. If the AI fails, a rule-based fallback routes the ad to a human. Tested live with Claude switched off: <b>no crash, no lost ad</b>.</div>
+</div>
+<div class="steps">
+<div class="step"><i>NO AI</i><b>① Gatekeeper</b>Blocks broken, low-quality and duplicate ads in 0.2 s, at no AI cost.</div>
+<div class="step ai"><i>CLAUDE HAIKU 4.5</i><b>② Routing Agent</b>Channel fit, risk flags with evidence, decision, owner and a rewrite.</div>
+<div class="step"><i>INTEGRATIONS</i><b>③ Execution Agent</b>HubSpot task + Slack alert, retried and logged, every time.</div>
+<div class="step ai"><i>CLAUDE HAIKU 4.5</i><b>④ Insights Agent</b>Daily report: patterns, recommendations and a watchlist.</div>
+</div>
+<div class="kpis">
+<div class="kpi"><b>834</b>real requests in load tests</div>
+<div class="kpi"><b>0</b>failed requests</div>
+<div class="kpi"><b>$0.0044</b>AI cost per ad</div>
+<div class="kpi"><b>6.4 s</b>median webhook → Slack + HubSpot</div>
+<div class="kpi"><b>≈330/min</b>on a single 1-vCPU server</div>
+</div>
+<div class="value">One real batch of 50 ads: <strong>$0.16 of AI replaced ≈3.5 hours of manual handoff (≈$121)</strong>. At 1,000 ads a day that is ≈$95–135 a month in AI costs, on the server already running, with no new software seats.</div>
+<div class="beyond"><h3>Beyond the brief: problems we found and solved</h3><div class="cols3">
+<div><b>An AI that blocked too much.</b> The first prompt blocked 85% of ads. Calibrating severity gave a realistic mix (16 approved · 18 review · 1 blocked) that was faster (p50 8.9 s → 6.4 s) and cheaper.</div>
+<div><b>The real bottleneck.</b> Under load the limit was n8n's intake on 1 vCPU (requests queued ~7 s), not Claude: 0 rate-limit errors at 100 concurrent requests.</div>
+<div><b>A hidden duplicate race.</b> Sequential repeats are caught in 0.19 s at $0, but simultaneous duplicates slip through. Found under load, documented with evidence, fix designed.</div>
+</div></div>
+</section>"""
+
+closing = """<section class="cover"><div class="k">What's next</div>
+<div class="big">From content that waits <em>to content that moves.</em></div>
+<div class="two">
+<div class="panel"><h3>Proven today</h3><ul>
+<li>Real outputs in HubSpot, Slack, Gmail and Google Sheets, from one webhook call per ad.</li>
+<li>834 real requests, up to 100 at once, with 0 failures and 0 lost events.</li>
+<li>Every decision explained: risk flags quote the copy, and every fix is written out.</li>
+<li>Fails safely: retries, an answer validator, a fallback router and crash alerts.</li>
+<li>Cost and latency measured for every single event.</li></ul></div>
+<div class="panel dark"><h3>Where it goes next</h3><ul>
+<li><b>Multi-team scale:</b> n8n queue mode (Redis + workers) to lift the 1-vCPU ceiling.</li>
+<li><b>Exactly-once processing:</b> an atomic idempotency claim for duplicates that arrive at the same moment.</li>
+<li><b>Named owners:</b> assign each HubSpot task to a real person, not just a team.</li>
+<li><b>A learning loop:</b> feed the Insights Agent's recommendations back into the Content Agent's prompt automatically.</li></ul></div>
+</div>
+<div class="cta"><div><b>Code, results and outputs</b> github.com/Mayank-1024/Madison-Project</div><div><b>Built by</b> Mayank Bhadrasen</div><div><b>Stack</b> n8n + Claude Haiku 4.5</div></div>
+</section>"""
+
+secs = [f"""<section class="cover"><div class="k">INFO7375 · Assignment 4 · Pitch &amp; demo</div><h1>Madison Action Layer</h1>
+<p class="sub" style="font-size:13pt;max-width:8.6in">AI-routed handoff from content to CRM: every ad variant is checked, decided and turned into real work in about 7 seconds. The pitch first, then the proof: 11 annotated screenshots from real runs on 2026-10-09.</p>
+<div class="idx"><div><b>★</b>The pitch</div><div></div>{''.join(f'<div><b>{i}</b>{e(t_)}</div>' for i, (_, t_, *_r) in enumerate(W, 1))}<div><b>→</b>What's next</div></div>
+<div class="meta"><div><b>Author</b> Mayank Bhadrasen</div><div><b>Stack</b> n8n 2.12.3 (self-hosted) + Claude Haiku 4.5</div><div><b>Integrations</b> HubSpot · Slack · Google Sheets · Gmail</div></div></section>""", pitch]
 for i, (n, title, cap, notes) in enumerate(W, 1):
     items = "".join(f"<li><span>{j}</span>{e(txt)}</li>" for j, (_, txt) in enumerate(notes, 1))
     secs.append(f"""<section><div class="k">Screenshot {i} of {len(W)}</div><h2>{e(title)}</h2><p class="sub">{e(cap)}</p>
 <div class="row">{shot(n, [b_ for b_, _ in notes])}</div><ol class="notes">{items}</ol></section>""")
+secs.append(closing)
 render(page("Bhadrasen_Mayank_A4_Demo_Walkthrough", secs), "demo_walkthrough")

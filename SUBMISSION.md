@@ -4,7 +4,7 @@
 | Brief asks for | File |
 |---|---|
 | workflow_v2.json | `workflow_v2.json` (+ `workflow_v2_error_handler.json`) — credential-free |
-| demo_walkthrough.pdf | `demo_walkthrough.pdf` (11 annotated screenshots: how the AI decides, what it produces, how it fails safely, how far it scales) |
+| demo_walkthrough.pdf | `demo_walkthrough.pdf` (pitch page + 11 annotated screenshots: how the AI decides, what it produces, how it fails safely, how far it scales + next steps) |
 | scale_test_results.md | `scale_test_results.md` (+ raw `scale_test/results/*`) |
 | outputs/ | `outputs/` — run report (HTML + PDF), action log CSVs, `output_gallery.pdf`, `screenshots/` (11 screenshots of the real Slack / HubSpot / email / Sheet / Data Table outputs) |
 | Screenshots | `screenshots/` — all 19 screenshots: 14 shown in the output gallery (1–13, 17), plus n8n canvas and node views (14–16, 18, 19) used in the walkthrough |

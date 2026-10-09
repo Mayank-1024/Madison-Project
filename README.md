@@ -133,7 +133,7 @@ Full details: [`scale_test_results.md`](scale_test_results.md).
 |---|---|
 | [`workflow_v2.json`](workflow_v2.json) | The main n8n workflow (34 nodes plus 5 sticky notes): Gatekeeper → Routing → Execution, the Insights report and a one-time setup trigger. Contains no credentials. |
 | [`workflow_v2_error_handler.json`](workflow_v2_error_handler.json) | n8n error workflow: Error Trigger → Slack `#campaign-urgent`. |
-| [`demo_walkthrough.pdf`](demo_walkthrough.pdf) | Walkthrough of 11 annotated screenshots: how the AI decides, what it produces, how it fails safely and how far it scales. |
+| [`demo_walkthrough.pdf`](demo_walkthrough.pdf) | The project pitch (problem, solution, proof, value), then 11 annotated screenshots showing how the AI decides, what it produces, how it fails safely and how far it scales, and a closing page on next steps. |
 | [`output_gallery.pdf`](output_gallery.pdf) | 14 real outputs, each with what it is, where it went and a quality check. |
 | [`scale_test_results.md`](scale_test_results.md) | Load-test results, what breaks first, production readiness and monitoring. |
 | [`workflow_run_and_error_handling.md`](workflow_run_and_error_handling.md) | One complete run from start to finish, what the AI decides, and how each failure is handled. |
