@@ -25,7 +25,7 @@
 **Proof Output Exists:**
 - Slack: `screenshots/1.png`, `2.png`, `3.png`, `4.png` · HubSpot: `5.png`, `6.png` · Email: `7.png`, `8.png` · Sheet: `9.png` · Data Table: `10.png`
 - Load-test evidence: `scale_test/results/v2-50.csv|json`, `screenshots/12.png`, `13.png`
-- Annotated walk-through: `demo_walkthrough.pdf` · 13 captioned examples: `output_gallery.pdf`
+- Annotated walk-through: `demo_walkthrough.pdf` · 14 captioned examples: `output_gallery.pdf` · all 19 screenshots: `screenshots/`
 
 ## What the AI decides and produces
 

@@ -93,7 +93,12 @@ W = [
    ((70.5, 25, 10, 8), "Validator answers false → branch to fallback."),
    ((55, 62, 20.5, 37), "Rule-based Fallback Router: regex risks + team by channel."),
    ((85, 11, 14, 31), "Plan Actions continues: task + Slack alert still sent.")]),
- (17, "…and the team is told the AI was skipped", "The fallback alert in #campaign-review — a human checks it; nothing is lost.",
+ (19, "The validator rejects the failed AI answer", "Validate AI Decision receives Claude's API error instead of a decision, marks it invalid and hands the event to the fallback router.",
+  [((0.5, 14.5, 34.5, 22.5), "Claude's error arrives as data (model claude-haiku-x not found) after 3 retries."),
+   ((69.5, 13.5, 30, 8.5), "ai_ok: false + ai_problem: api_error, so the answer is rejected."),
+   ((36.5, 31, 31.5, 46), "Allowed values for decision, priority, owner team and Slack channel are enforced."),
+   ((69.5, 32.5, 18, 12.5), "No tokens used: $0 AI cost for this event.")]),
+ (17,"…and the team is told the AI was skipped", "The fallback alert in #campaign-review — a human checks it; nothing is lost.",
   [((27.3, 64.2, 47.5, 3.2), "⚠️ AI router unavailable — with the real API error."),
    ((41.3, 70.6, 13.5, 4.6), "Channel fit: not assessed (AI unavailable)."),
    ((27.3, 84.4, 27.5, 2.9), "HubSpot task created · 'Routed by fallback rules' · confidence 0.")]),
@@ -119,25 +124,10 @@ W = [
  (11, "Reliability: duplicates are not re-processed", "Re-sending an already-processed event is answered from the action log — no AI call, no task, no alert.",
   [((1, 63, 30, 9), "status: duplicate"), ((1, 26.5, 30, 18.5), "0.19 s end to end"), ((1, 80, 42, 9), "AI cost $0")]),
 ]
-talk = """<section><div class="k">Talk track · 3–5 minutes</div><h2>How to present this demo</h2><div class="two" style="margin-top:10px">
-<div class="panel"><h3>Key points (in order)</h3><ol>
-<li><b>Problem (20 s):</b> Madison's AI content dead-ends in a CSV; teams copy it into CRMs by hand — ~10 h/week per marketer.</li>
-<li><b>Architecture (40 s):</b> Gatekeeper (no AI) → Claude Routing Agent → Execution Agent; Insights Agent on a schedule. Screenshot 1.</li>
-<li><b>Intelligence (60 s):</b> Claude scores channel fit against real limits, flags risks with exact evidence, decides, writes the task and a fix. Schema + validator = never trusted blindly. Screenshots 2–3.</li>
-<li><b>Real outputs (60 s):</b> Slack alert, HubSpot task, Sheet log, emailed report with AI-found patterns. Screenshots 4–6 + gallery.</li>
-<li><b>Scale + honesty (45 s):</b> 834 real requests, 0 failures, ≈330/min ceiling on 1 vCPU, $0.0045/event; known gap: concurrent duplicates. Screenshots 7–8.</li>
-<li><b>Value (15 s):</b> $0.16 of AI replaced ≈3.5 h of handoff per 50 variants.</li></ol></div>
-<div class="panel"><h3>Backup plan if the live demo fails</h3><ul>
-<li><b>Webhook / n8n down:</b> present this PDF; every screenshot is from a real run on 2026-10-09.</li>
-<li><b>Claude slow or rate-limited:</b> show the fallback branch — the event still routes to #campaign-review with a "⚠️ AI router unavailable" message.</li>
-<li><b>Slack/HubSpot error:</b> open the Google Sheet / Data Table — every outcome is logged, including partial failures.</li>
-<li><b>No internet:</b> open <code>outputs/madison_run_report.html</code> and <code>scale_test/results/*.json</code> locally.</li>
-<li><b>Live-demo command (1 event, ~7 s):</b><br><code>python3 make_events.py --n 1 --run-id live-demo &amp;&amp; python3 loadtest.py events_live-demo.jsonl</code></li></ul></div>
-</div></section>"""
 secs = [f"""<section class="cover"><div class="k">INFO7375 · Assignment 4 · Demo</div><h1>Screenshot walkthrough</h1>
 <p class="sub" style="font-size:12pt;max-width:8in">Madison Action Layer v2: how the AI makes decisions, what it produces, how it fails safely and how far it scales. All screenshots from real runs on 2026-10-09.</p>
 <div class="idx">{''.join(f'<div><b>{i}</b>{e(t_)}</div>' for i, (_, t_, *_r) in enumerate(W, 1))}</div>
-<div class="meta"><div><b>Author</b> Mayank Bhadrasen</div><div><b>Stack</b> n8n 2.12.3 (self-hosted) + Claude Haiku 4.5</div><div><b>Integrations</b> HubSpot · Slack · Google Sheets · Gmail</div></div></section>""", talk]
+<div class="meta"><div><b>Author</b> Mayank Bhadrasen</div><div><b>Stack</b> n8n 2.12.3 (self-hosted) + Claude Haiku 4.5</div><div><b>Integrations</b> HubSpot · Slack · Google Sheets · Gmail</div></div></section>"""]
 for i, (n, title, cap, notes) in enumerate(W, 1):
     items = "".join(f"<li><span>{j}</span>{e(txt)}</li>" for j, (_, txt) in enumerate(notes, 1))
     secs.append(f"""<section><div class="k">Screenshot {i} of {len(W)}</div><h2>{e(title)}</h2><p class="sub">{e(cap)}</p>

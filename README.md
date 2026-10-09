@@ -133,12 +133,12 @@ Full details: [`scale_test_results.md`](scale_test_results.md).
 |---|---|
 | [`workflow_v2.json`](workflow_v2.json) | The main n8n workflow (34 nodes plus 5 sticky notes): Gatekeeper → Routing → Execution, the Insights report and a one-time setup trigger. Contains no credentials. |
 | [`workflow_v2_error_handler.json`](workflow_v2_error_handler.json) | n8n error workflow: Error Trigger → Slack `#campaign-urgent`. |
-| [`demo_walkthrough.pdf`](demo_walkthrough.pdf) | Annotated screenshot walkthrough, talk track and backup plan for a live demo. |
+| [`demo_walkthrough.pdf`](demo_walkthrough.pdf) | Walkthrough of 11 annotated screenshots: how the AI decides, what it produces, how it fails safely and how far it scales. |
 | [`output_gallery.pdf`](output_gallery.pdf) | 14 real outputs, each with what it is, where it went and a quality check. |
 | [`scale_test_results.md`](scale_test_results.md) | Load-test results, what breaks first, production readiness and monitoring. |
 | [`workflow_run_and_error_handling.md`](workflow_run_and_error_handling.md) | One complete run from start to finish, what the AI decides, and how each failure is handled. |
-| [`outputs/`](outputs/) | Run report (HTML and PDF), action-log CSV exports, gallery PDF and screenshots of the outputs. |
-| [`screenshots/`](screenshots/) | Screenshots from real runs: Slack, HubSpot, Gmail, Google Sheets, n8n and terminal. |
+| [`outputs/`](outputs/) | Run report (HTML and PDF), action-log CSV exports, gallery PDF and 11 screenshots of the real Slack, HubSpot, email, Sheet and Data Table outputs. |
+| [`screenshots/`](screenshots/) | All 19 screenshots from real runs: Slack, HubSpot, Gmail, Google Sheets, n8n and terminal. 14 appear in the output gallery (1–13, 17); the n8n canvas and node views (14–16, 18, 19) appear in the walkthrough. |
 | [`scale_test/`](scale_test/) | `make_events.py` (builds test events), `loadtest.py` (fires them), the generated `events_*.jsonl` files and raw `results/` (one CSV per request and one JSON summary per run). |
 | [`figma/`](figma/) | Board assets: executive summary, architecture, scale chart and before/after (SVG and PNG). |
 | [`_build/`](_build/) | Generator scripts. `build_v2.py` assembles the workflow JSON from the Code-node sources in `_build/js/`, and `gen_pdfs.py` / `gen_figma.py` produce the PDFs and board assets. |
