@@ -1,0 +1,11 @@
+event_id,http_status,seconds,status,decision,ai_status,cost_usd,server_latency_ms,error
+evt_scale-10p_0001,200,9.22,completed,block,ai,0.004877,8547,
+evt_scale-10p_0002,200,8.78,completed,block,ai,0.004341,8196,
+evt_scale-10p_0003,200,10.316,completed,needs_review,ai,0.005014,9806,
+evt_scale-10p_0004,422,1.197,blocked,block,skipped,0,33,
+evt_scale-10p_0005,200,9.507,completed,block,ai,0.004678,8985,
+evt_scale-10p_0006,200,11.43,completed,block,ai,0.005645,10826,
+evt_scale-10p_0007,422,1.413,blocked,block,skipped,0,371,
+evt_scale-10p_0008,200,11.27,completed,block,ai,0.005748,10490,
+evt_scale-10p_0009,200,8.31,completed,block,ai,0.00437,7729,
+evt_scale-10p_0010,200,10.973,completed,block,ai,0.005298,10357,

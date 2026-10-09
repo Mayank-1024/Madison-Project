@@ -1,0 +1,30 @@
+{
+  "label": "v2-50",
+  "requests": 50,
+  "concurrency": 10,
+  "wall_clock_s": 28.3,
+  "throughput_per_min": 106.0,
+  "latency_s": {
+    "min": 0.144,
+    "p50": 6.449,
+    "p95": 9.249,
+    "max": 9.958,
+    "mean": 5.19
+  },
+  "http_status": {
+    "200": 35,
+    "422": 15
+  },
+  "status": {
+    "blocked": 15,
+    "completed": 35
+  },
+  "ai_status": {
+    "ai": 35,
+    "skipped": 15
+  },
+  "failures": 0,
+  "ai_cost_usd": 0.1556,
+  "ai_cost_per_routed_event_usd": 0.00444,
+  "sample_errors": []
+}

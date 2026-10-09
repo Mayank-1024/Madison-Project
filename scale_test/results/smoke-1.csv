@@ -1,0 +1,2 @@
+event_id,http_status,seconds,status,decision,ai_status,cost_usd,server_latency_ms,error
+evt_smoke-1_0001,200,19.352,completed,block,ai,0.004875,18708,

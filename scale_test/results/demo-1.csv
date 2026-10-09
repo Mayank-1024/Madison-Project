@@ -1,0 +1,2 @@
+event_id,http_status,seconds,status,decision,ai_status,cost_usd,server_latency_ms,error
+evt_demo-1_0001,200,7.641,completed,needs_review,ai,0.004569,7327,

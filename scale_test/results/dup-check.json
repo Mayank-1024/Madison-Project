@@ -1,0 +1,27 @@
+{
+  "label": "dup-check",
+  "requests": 1,
+  "concurrency": 1,
+  "wall_clock_s": 0.2,
+  "throughput_per_min": 304.8,
+  "latency_s": {
+    "min": 0.194,
+    "p50": 0.194,
+    "p95": 0.194,
+    "max": 0.194,
+    "mean": 0.19
+  },
+  "http_status": {
+    "200": 1
+  },
+  "status": {
+    "duplicate": 1
+  },
+  "ai_status": {
+    "": 1
+  },
+  "failures": 0,
+  "ai_cost_usd": 0,
+  "ai_cost_per_routed_event_usd": 0.0,
+  "sample_errors": []
+}

@@ -1,0 +1,27 @@
+{
+  "label": "demo-1",
+  "requests": 1,
+  "concurrency": 1,
+  "wall_clock_s": 7.7,
+  "throughput_per_min": 7.8,
+  "latency_s": {
+    "min": 7.641,
+    "p50": 7.641,
+    "p95": 7.641,
+    "max": 7.641,
+    "mean": 7.64
+  },
+  "http_status": {
+    "200": 1
+  },
+  "status": {
+    "completed": 1
+  },
+  "ai_status": {
+    "ai": 1
+  },
+  "failures": 0,
+  "ai_cost_usd": 0.0046,
+  "ai_cost_per_routed_event_usd": 0.00457,
+  "sample_errors": []
+}

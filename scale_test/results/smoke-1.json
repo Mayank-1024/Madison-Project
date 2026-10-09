@@ -1,0 +1,27 @@
+{
+  "label": "smoke-1",
+  "requests": 1,
+  "concurrency": 1,
+  "wall_clock_s": 19.4,
+  "throughput_per_min": 3.1,
+  "latency_s": {
+    "min": 19.352,
+    "p50": 19.352,
+    "p95": 19.352,
+    "max": 19.352,
+    "mean": 19.35
+  },
+  "http_status": {
+    "200": 1
+  },
+  "status": {
+    "completed": 1
+  },
+  "ai_status": {
+    "ai": 1
+  },
+  "failures": 0,
+  "ai_cost_usd": 0.0049,
+  "ai_cost_per_routed_event_usd": 0.00487,
+  "sample_errors": []
+}

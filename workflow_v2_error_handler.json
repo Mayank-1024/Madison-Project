@@ -1,0 +1,85 @@
+{
+  "name": "Madison Action Layer v2 – Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "283683b4-d7ac-4df6-9f48-a0535e6a4c21",
+      "name": "On Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ERROR WORKFLOW — runs when the main workflow crashes (anything not already handled by its own branches).\n// Posts a plain-language alert so a human knows within seconds.\nconst e = $input.first().json;\nconst wf = e.workflow?.name || 'Madison Action Layer v2';\nconst node = e.execution?.lastNodeExecuted || 'unknown node';\nconst msg = (e.execution?.error?.message || e.trigger?.error?.message || 'Unknown error').slice(0, 400);\nconst url = e.execution?.url || '';\nreturn [{ json: { slack_payload: { channel: 'campaign-urgent', text: `🚨 ${wf} failed at \"${node}\": ${msg}`, blocks: [\n  { type: 'section', text: { type: 'mrkdwn', text: `🚨 *Workflow failure — ${wf}*\\n*Node:* ${node}\\n*Error:* ${msg}` } },\n  { type: 'context', elements: [{ type: 'mrkdwn', text: `${url ? `<${url}|Open execution>` : 'No execution link'} · ${new Date().toISOString()}` }] },\n] } } }];"
+      },
+      "id": "4b1c8de4-d33b-4c57-9f20-2222e8277962",
+      "name": "Format Failure Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.slack_payload) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "32588586-5032-4d2a-b598-49a44e8f07cd",
+      "name": "Alert #campaign-urgent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "connections": {
+    "On Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Format Failure Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Failure Alert": {
+      "main": [
+        [
+          {
+            "node": "Alert #campaign-urgent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": []
+}
