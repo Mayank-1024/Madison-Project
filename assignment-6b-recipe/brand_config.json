@@ -1,0 +1,77 @@
+{
+  "tool_summary": "Madison Automation Agent helps agency marketing-ops leads check every new ad against its platform's rules and hand it to the right teammate with a ready-to-use fix, so they can ship good ads the same day.",
+  "primary_user": {
+    "role": "Marketing operations lead (campaign-ops manager) at a 20-80 person digital agency that runs paid social, search and email for 10-30 client brands.",
+    "situation": "Every morning a fresh batch of ad variants arrives from AI content tools or copywriters; before each client's launch window they must check every variant against the platform it will run on, decide what ships and what needs fixing, give it to the right channel team, and make sure nobody forgets it.",
+    "workaround": "Read each variant in a spreadsheet, count characters by hand for Google Ads and email subject lines, paste approved copy into HubSpot or Asana tasks, then ping each channel owner on Slack and chase replies by email; approval tools such as Planable centralise comments but a person still judges every ad."
+  },
+  "data_sources": [
+    {
+      "name": "Ad copy library (HuggingFace jaykin01/advertisement-copy)",
+      "local_path": "data/verified/ad_copy",
+      "record_type": "One finished ad variant: product, headline, body and call-to-action, i.e. the creative a marketing-ops lead has to judge.",
+      "update_freq": "Static public snapshot (dataset released 2023-09-25); re-pulled on every pipeline run, first 100 rows.",
+      "quality_gate": "Kept only if it has a headline of 3+ words, a product name and a body of 8+ words and is not a duplicate product; a missing call-to-action or placeholder text such as [website] is tagged, not dropped, because those are the failures the tool must catch."
+    },
+    {
+      "name": "Campaign context (HuggingFace federicomoreno/marketing-campaign-performance-200k)",
+      "local_path": "data/verified/campaign_metadata",
+      "record_type": "One client campaign: company, channel, audience, conversion rate, ROI and date, which decides who owns an ad and how urgent it is.",
+      "update_freq": "Static public snapshot (campaigns dated 2021-01-01 to 2021-04-10); re-pulled on every run, first 100 rows.",
+      "quality_gate": "Kept only if it has a company, one of six known channels (Google Ads, YouTube, Facebook, Instagram, Email, Website), an audience, numeric conversion rate and ROI and a valid past YYYY-MM-DD date, with campaign type always derived from the channel."
+    },
+    {
+      "name": "Market context (RSS: HubSpot Marketing Blog, Social Media Examiner, Marketing Dive, MarTech)",
+      "local_path": "data/verified/industry_briefs",
+      "record_type": "One current marketing news article: title, summary, date and URL, used only as background that can raise an ad's priority, never to penalise it.",
+      "update_freq": "Live feeds, refreshed on every run (publishers post daily).",
+      "quality_gate": "Kept only if it has a title, a working http(s) URL seen once, a publication date within the last 90 days and a plain-text summary of 20+ words with no HTML."
+    }
+  ],
+  "phase_gates": [
+    {
+      "step": "Run approval (before Layer 1)",
+      "good_looks_like": "The conductor shows the run plan (sources, sample or live mode, number of ads to route, estimated AI cost) and nothing has been fetched or sent yet.",
+      "bad_looks_like": "The run would send live HubSpot tasks or Slack alerts, or route more than 50 ads, without an explicit decision.",
+      "response": "Hard stop",
+      "judgment_type": "PA"
+    },
+    {
+      "step": "Step 1: Data ingestion (external sources to data/raw)",
+      "good_looks_like": "All three sources answered, or the log names the one that did not; ads 80-100, campaigns 100, articles 50 or more; text arrives as words, not HTML error pages.",
+      "bad_looks_like": "A source returns an error page, 0 records or less than half its usual count, columns are missing, or text arrives as raw HTML.",
+      "response": "Log and continue (hard stop if the ad copy source is missing)",
+      "judgment_type": "IJ"
+    },
+    {
+      "step": "Step 2: Data validation, GIGO gate (data/raw to data/verified)",
+      "good_looks_like": "At least 80% of records complete, 0 duplicates, 100% valid past YYYY-MM-DD dates, at least 25 verified records per source, and every rejected record has a logged reason.",
+      "bad_looks_like": "More than 20% of a source fails the gate, a source has fewer than 25 verified records, or a duplicate or future-dated record reaches data/verified.",
+      "response": "Flag for review (hard stop if any source has fewer than 25 verified records)",
+      "judgment_type": "IJ"
+    },
+    {
+      "step": "Step 3: AI processing (Routing Agent, Claude Haiku 4.5)",
+      "good_looks_like": "Every ad gets exactly one decision, an owner that matches its channel and a plain-English reason; quoted evidence appears in the ad; character counts are right; the batch is neither all blocked nor all approved.",
+      "bad_looks_like": "Invented evidence, wrong character counts, placeholder text approved, broken or refused output, or more than 50% of the batch blocked.",
+      "response": "Flag for review (log and continue for AI failures routed by the fallback rules; hard stop for an approved placeholder)",
+      "judgment_type": "TO"
+    },
+    {
+      "step": "Step 4: Final report (logs/reports to the marketing-ops lead)",
+      "good_looks_like": "The report opens with what the batch means, shows each team's queue with the fix inside, and every number reconciles with the run log.",
+      "bad_looks_like": "Report counts do not match the run log, an ad appears twice, or fallback-routed ads are not labelled as needing a manual check.",
+      "response": "Hard stop on a mismatch; flag for review for exceptions",
+      "judgment_type": "EI"
+    },
+    {
+      "step": "Any step: pipeline failure",
+      "good_looks_like": "Every failure is caught, written to the run log with the step and reason, and the run either continues safely or stops with a clear message.",
+      "bad_looks_like": "A step crashes without a log entry, or the AI service is unreachable for the whole batch.",
+      "response": "Hard stop",
+      "judgment_type": "PF"
+    }
+  ],
+  "one_thing": "Our tool is the only ad-handoff assistant that delivers an explained verdict on every finished ad, checked against its channel's real rules, straight to the teammate who owns it, inside the agency's own CRM and chat, for agency marketing-ops leads without making them switch content platforms or read every ad themselves.",
+  "conductor_note": "The campaign dataset is synthetic and assigns campaign types and audiences at random, so when the AI flags an 'audience mismatch' on an otherwise clean ad, check the pairing before blaming the copy; treat a sudden jump in block rate as a data or prompt problem, not a sudden drop in ad quality."
+}

@@ -1,0 +1,256 @@
+{
+  "_note": "Draft generated from Conductor Brief Part 3-5 (A5). Thresholds are the human-checkable standards in the brief; 'enforced' marks what workflow_v2 already checks.",
+  "tool": {
+    "name": "Madison Automation Agent",
+    "one_sentence": "Madison Automation Agent helps agency marketing-ops leads check every new ad against its platform's rules and hand it to the right teammate with a ready-to-use fix, so they can ship good ads the same day.",
+    "primary_user": "Marketing operations lead (campaign-ops manager) at a 20–80 person digital agency that runs paid social, search and email for 10–30 client brands.",
+    "one_thing": "Our tool is the only ad-handoff assistant that delivers an explained verdict on every finished ad, checked against its channel's real rules, straight to the teammate who owns it, inside the agency's own CRM and chat, for agency marketing-ops leads without making them switch content platforms or read every ad themselves."
+  },
+  "data_sources": [
+    {
+      "id": "DS1",
+      "name": "ad_copy",
+      "path": "data/verified/ad_copy/ad_copy.csv",
+      "format": "csv",
+      "records": 90,
+      "refresh": "static snapshot (dataset 2023-09-25)",
+      "required_fields": [
+        "title_or_headline",
+        "body_text",
+        "brand_or_product"
+      ],
+      "checks": {
+        "headline_min_words": 3,
+        "body_min_words": 8,
+        "cta_present_min_pct": 80,
+        "placeholders": "tag, do not drop"
+      }
+    },
+    {
+      "id": "DS2",
+      "name": "campaign_metadata",
+      "path": "data/verified/campaign_metadata/campaign_metadata.csv",
+      "format": "csv",
+      "records": 100,
+      "refresh": "static snapshot (2021-01-01..2021-04-10)",
+      "required_fields": [
+        "brand_or_product",
+        "channel",
+        "audience",
+        "published_date"
+      ],
+      "checks": {
+        "allowed_channels": [
+          "Google Ads",
+          "YouTube",
+          "Facebook",
+          "Instagram",
+          "Email",
+          "Website"
+        ],
+        "date_format": "YYYY-MM-DD",
+        "derive_campaign_type_from_channel": true
+      }
+    },
+    {
+      "id": "DS3",
+      "name": "industry_briefs",
+      "path": "data/verified/industry_briefs/industry_briefs.csv",
+      "format": "csv (from RSS)",
+      "records": 95,
+      "refresh": "every collection run",
+      "required_fields": [
+        "title_or_headline",
+        "source_url",
+        "published_date",
+        "body_text"
+      ],
+      "checks": {
+        "max_age_days": 90,
+        "summary_min_words": 20,
+        "no_html": true,
+        "unique_url": true,
+        "role": "context only - never penalise an ad for not matching"
+      }
+    },
+    {
+      "id": "DS4",
+      "name": "variant_events",
+      "path": "data/verified/variant_events/",
+      "format": "jsonl / webhook JSON",
+      "records": "1 per new ad",
+      "refresh": "real time",
+      "required_fields": [
+        "event_id",
+        "brief_id",
+        "variant_id",
+        "headline",
+        "body",
+        "cta",
+        "popper_pass",
+        "created_at"
+      ],
+      "checks": {
+        "popper_pass": true,
+        "created_at_valid_past": true,
+        "idempotency_key": "brief_id:variant_id unseen"
+      }
+    },
+    {
+      "id": "DS5",
+      "name": "action_log",
+      "path": "data/verified/action_log/",
+      "format": "n8n Data Table + Google Sheet",
+      "records": "1 per decision",
+      "refresh": "real time",
+      "required_fields": [
+        "idempotency_key",
+        "status",
+        "decision",
+        "owner_team",
+        "createdAt"
+      ],
+      "checks": {
+        "unique_key": true,
+        "live_completed_has_task_id": true
+      }
+    }
+  ],
+  "phase_gates": [
+    {
+      "id": "G1",
+      "step": "data ingestion",
+      "pass_if": [
+        "all 3 A3 sources answered or named as unavailable",
+        "ads 80-100, campaigns 100, articles >=50",
+        "no raw HTML"
+      ],
+      "enforced": true
+    },
+    {
+      "id": "G2",
+      "step": "data validation",
+      "pass_if": [
+        ">=80% complete",
+        "0 duplicates",
+        "100% valid past YYYY-MM-DD dates",
+        "event has required fields, passed quality check, unseen key"
+      ],
+      "enforced": true
+    },
+    {
+      "id": "G3",
+      "step": "AI processing",
+      "pass_if": [
+        "one decision + owner + plain-English reason",
+        "quoted evidence appears in the ad",
+        "char counts correct",
+        "rewrite fits channel limit",
+        "batch: not all blocked / not all approved"
+      ],
+      "enforced": "schema+enums yes; evidence/count re-check planned"
+    },
+    {
+      "id": "G4",
+      "step": "final output",
+      "pass_if": [
+        "alert readable in 5 s",
+        "task has action title + due date + fix",
+        "report numbers match action log"
+      ],
+      "enforced": "partly"
+    }
+  ],
+  "gigo_rules": [
+    {
+      "id": "X1",
+      "trigger": "source error/empty/drop >50%/raw HTML",
+      "response": "log_and_continue",
+      "except": {
+        "if": "DS1 missing",
+        "response": "hard_stop"
+      }
+    },
+    {
+      "id": "X2",
+      "trigger": "missing headline/CTA, bad date, failed quality check, duplicate, placeholder text",
+      "response": "hard_stop_item",
+      "batch": {
+        "if_fail_rate_over_pct": 20,
+        "response": "flag_for_review"
+      }
+    },
+    {
+      "id": "X3",
+      "trigger": "malformed/refused AI output",
+      "response": "log_and_continue (fallback router)",
+      "also": [
+        {
+          "if": "invented evidence or wrong counts",
+          "response": "flag_for_review"
+        },
+        {
+          "if": "placeholder approved",
+          "response": "hard_stop_item"
+        },
+        {
+          "if": "batch block rate over 50%",
+          "response": "flag_for_review + pause auto-approve"
+        }
+      ]
+    },
+    {
+      "id": "X4",
+      "trigger": "CRM/chat rejects, duplicate task, report mismatch",
+      "response": "log_and_continue (3 retries)",
+      "also": [
+        {
+          "if": "duplicate task",
+          "response": "flag_for_review"
+        },
+        {
+          "if": "report mismatch",
+          "response": "hard_stop"
+        }
+      ]
+    }
+  ],
+  "channel_rules": {
+    "Google Ads": {
+      "headline_max_chars": 30,
+      "description_max_chars": 90,
+      "emoji": false,
+      "hashtags": false
+    },
+    "Email": {
+      "subject_max_chars": 60,
+      "hashtags": false
+    },
+    "Facebook": {
+      "hook_chars": 40,
+      "truncate_at": 125
+    },
+    "Instagram": {
+      "hook_chars": 40,
+      "truncate_at": 125,
+      "hashtags": true
+    },
+    "YouTube": {
+      "needs_spoken_hook": true
+    },
+    "Website": {
+      "clarity_over_hype": true
+    }
+  },
+  "brand": {
+    "palette": {
+      "paper": "#fbf8f3",
+      "ink": "#1f1b16",
+      "accent": "#a8472a",
+      "good": "#5c6b45",
+      "bad": "#9b2c1f",
+      "highlight": "#8a6418"
+    },
+    "heading_font": "Iowan Old Style / Georgia"
+  }
+}

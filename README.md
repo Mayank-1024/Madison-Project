@@ -8,6 +8,20 @@ Built with **n8n** (self-hosted) and **Claude Haiku 4.5**, connected to **HubSpo
 
 ---
 
+## Project journey
+
+This repository holds the whole Madison Automation Agent project. The root folder is Assignment 4 (the working Action Layer); each later step has its own folder.
+
+| Assignment | Folder | What it adds |
+|---|---|---|
+| A3 · Data pipeline | [`assignment-3-data-pipeline/`](assignment-3-data-pipeline/) | 285 clean records from HuggingFace + RSS, with quality checks |
+| **A4 · Action Layer v2** | this folder (root) | Gatekeeper → Claude routing → HubSpot + Slack, scale-tested |
+| A5 · Conductor Brief | [`assignment-5-conductor-brief/`](assignment-5-conductor-brief/) | Strategy: user, data contract, good/bad gates, the one thing |
+| A6A · Interface | [`assignment-6a-interface/`](assignment-6a-interface/) | Gradio web app for non-technical users |
+| A6B · Recipe | [`assignment-6b-recipe/`](assignment-6b-recipe/) | Four-layer conductor pipeline, typed phase gates, recipe |
+
+---
+
 ## The problem
 
 Madison's Content Agent writes ad variants and checks their quality. Then they stop: they sit in a CSV file or a chat message. Someone still has to read each variant, decide whether it can go live, write a CRM task, and tell the right team. Marketers spend about **10 hours a week (26% of their time)** on manual handoffs like this (DoubleVerify 2025 survey of 1,970 marketers).
