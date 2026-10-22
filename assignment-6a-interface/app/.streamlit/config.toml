@@ -1,0 +1,16 @@
+# Brand theme (A5 palette), forced light so colours match regardless of the visitor's system setting.
+[theme]
+base = "light"
+primaryColor = "#a8472a"
+backgroundColor = "#fbf8f3"
+secondaryBackgroundColor = "#f3ece2"
+textColor = "#1f1b16"
+font = "sans-serif"
+
+[client]
+# Never show stack traces to visitors; the app shows its own plain-English errors.
+showErrorDetails = "none"
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false
