@@ -8,7 +8,7 @@ Secrets (set in Streamlit Community Cloud → app → Settings → Secrets, neve
   MADISON_WEBHOOK_URL   production URL of the n8n webhook (…/webhook/madison/variant)
   MADISON_WEBHOOK_KEY   value of the n8n Header Auth credential (sent as X-Madison-Key)
 """
-import html, json, os, time, uuid
+import html, json, os, re, time, uuid
 from collections import defaultdict, deque
 from datetime import datetime, timezone
 
@@ -101,14 +101,36 @@ def headline_hint(headline: str, channel: str) -> str:
 
 
 VERDICT = {
-    "auto_approve": ("ship", "Good to ship", "No serious problems found. It has been given to the owning team."),
+    "auto_approve": ("ship", "Good to ship", "No serious problems found. Hand it off to the owning team when you're ready."),
     "needs_review": ("review", "Fix before it ships", "A person should look at this first. The problems and a fix are below."),
     "block": ("block", "Do not publish", "This ad has a serious problem (for example unfinished text) and must be fixed."),
 }
 PRIORITY = {"urgent": "Today", "high": "Within 1 day", "normal": "Within 3 days", "low": "This week"}
+HANDOFF_VERB = {"auto_approve": "to publish", "needs_review": "to fix", "block": "to fix before anyone publishes it"}
+# optional links shown after a hand-off (set as secrets; e.g. https://app.hubspot.com/tasks/<portal>/view/all/task/{id})
+TASK_URL = secret("MADISON_HUBSPOT_TASK_URL")
+SLACK_URL = secret("MADISON_SLACK_CHANNEL_URL")
+SUGGESTED_HEADLINE = re.compile(r"Headline[^:]{0,24}:\s*(['\"“‘])(.+?)(?:\1|[”’])(?=[\s.,;()]|$)")
 
 
-def render_result(resp: dict, sent: bool, seconds: float) -> str:
+def own_counts(fix: str, channel: str) -> str:
+    """The AI's character counts are not reliable, so count every suggested headline here (tester feedback, session 1)."""
+    limit = CHANNELS.get(channel, ("", "", None))[2]
+    if not limit:
+        return ""
+    notes = []
+    for m in SUGGESTED_HEADLINE.finditer(fix or ""):
+        n = len(m.group(2))
+        verdict = f"fits the {limit}-character limit" if n <= limit else f"<b>still over</b> the {limit}-character limit"
+        notes.append(f"“{e(m.group(2))}” is {n} characters: {verdict}.")
+    return "<div class='m-count'><b>Counted by this app:</b> " + " ".join(notes) + "</div>" if notes else ""
+
+
+def link(text: str, url: str) -> str:
+    return f"<a href='{e(url)}' target='_blank'>{text}</a>" if url else text
+
+
+def render_result(resp: dict, sent: bool, seconds: float, ad: dict) -> str:
     status = resp.get("status", "")
     if status == "duplicate":
         return card("info", "Already checked", "<p>This exact ad was already checked, so nothing new was created. Edit the ad or press <b>Clear</b> to check another one.</p>")
@@ -135,16 +157,23 @@ def render_result(resp: dict, sent: bool, seconds: float) -> str:
     ) or "<li>None found.</li>"
     fit = d.get("channel_fit") or {}
     task = d.get("hubspot_task") or {}
-    if sent:
-        task_id = resp.get("hubspot_task_id")
-        where = (f"Task created in HubSpot{(' (#' + e(str(task_id)) + ')') if task_id else ''} and an alert posted in Slack "
-                 f"<b>#{e(d.get('slack_channel', ''))}</b>.") if resp.get("status") == "completed" else \
-                "We tried to create the task and alert, but one of them failed. The verdict below is still valid."
+    sent_box = ""
+    if sent and resp.get("status") == "completed":
+        task_id = str(resp.get("hubspot_task_id") or "")
+        task_txt = link(f"HubSpot task #{e(task_id)}", TASK_URL.replace("{id}", task_id) if TASK_URL and task_id else "") if task_id else "a HubSpot task"
+        slack_txt = link(f"Slack #{e(d.get('slack_channel', ''))}", SLACK_URL)
+        sent_box = (f"<div class='m-sent'>✓ Sent to {e(d.get('owner_team', 'the team'))}: {task_txt} and an alert in {slack_txt}.<br>"
+                    "<span>This is the verdict your team received.</span></div>")
+        where = "Handed off. To send another ad, edit it or press <b>Clear</b>, then check it again."
+    elif sent:
+        where = "We tried to create the task and alert, but one of them failed. The verdict below is still valid. In a minute, press Check this ad again and hand it off once more."
     else:
-        where = "Preview only: nothing was sent to HubSpot or Slack. Tick <b>Send to my team</b> to hand it off for real."
+        where = "Preview only: nothing has been sent to anyone yet."
+    channel_count = (f" <span class='m-count-inline'>(Counted by this app: the headline is {len(ad['headline'])} characters"
+                     + (f", limit {CHANNELS[ad['channel']][2]}" if CHANNELS[ad['channel']][2] else "") + ".)</span>")
     # no blank lines or leading indentation: Streamlit's markdown would turn them into code blocks
     return "".join(f"""
-<div class="m-card m-{kind}">{banner}
+<div class="m-card m-{kind}">{sent_box}{banner}
 <div class="m-verdict">{e(title)}</div>
 <div class="m-sub">{e(sub)}</div>
 <div class="m-grid">
@@ -153,9 +182,9 @@ def render_result(resp: dict, sent: bool, seconds: float) -> str:
 <div><span>Channel fit</span>{e(str(fit.get('score', '?')))} / 5</div>
 </div>
 <p class="m-why"><b>Why:</b> {e(d.get('rationale', ''))}</p>
-<p class="m-why"><b>Channel check:</b> {e(fit.get('note', ''))}</p>
+<p class="m-why"><b>Channel check:</b> {e(fit.get('note', ''))}{channel_count}</p>
 <div class="m-h">What to fix</div><ul class="m-risks">{risk_html}</ul>
-<div class="m-h">Suggested fix</div><div class="m-fix">{e(d.get('suggested_fix', ''))}</div>
+<div class="m-h">Suggested fix</div><div class="m-fix">{e(d.get('suggested_fix', ''))}{own_counts(d.get('suggested_fix', ''), ad['channel'])}</div>
 <div class="m-h">Task for the team</div>
 <div class="m-task"><b>{e(task.get('title', ''))}</b><br>{e(task.get('body', '')).replace(chr(10), '<br>')}</div>
 <div class="m-foot">{where} · Checked in {seconds:.1f} s · confidence {e(str(d.get('confidence', '')))}</div>
@@ -163,7 +192,8 @@ def render_result(resp: dict, sent: bool, seconds: float) -> str:
 
 
 # ------------------------------------------------------------------ main action
-def check_ad(channel, client, product, headline, body, cta, audience, conv, roi, send, visitor) -> str:
+def check_ad(channel, client, product, headline, body, cta, audience, conv, roi, send, visitor, info: dict) -> str:
+    """Returns the HTML to show; fills `info` (team, decision, status) when the checker gave a verdict."""
     headline, body, cta, client = (headline or "").strip(), (body or "").strip(), (cta or "").strip(), (client or "").strip()[:80]
     missing = [n for n, v in [("the channel", channel), ("the client or brand", client), ("a headline", headline), ("the body text", body), ("a call-to-action", cta)] if not v]
     if missing:
@@ -214,12 +244,19 @@ def check_ad(channel, client, product, headline, body, cta, audience, conv, roi,
         data = data[0] if data else {}
     if r.status_code not in (200, 422):
         return problem("Something went wrong on our side", f"The checker returned an error (code {r.status_code}).", "Please try again in a minute.")
-    return render_result(data, bool(send), secs)
+    try:
+        d = json.loads(data.get("detail_json") or "{}").get("decision") or {}
+    except ValueError:
+        d = {}
+    if d and data.get("status") in ("completed", "partial_failure", "failed"):
+        info.update(team=d.get("owner_team", "the owning team"), decision=d.get("decision"), status=data.get("status"))
+    return render_result(data, bool(send), secs, {"headline": headline, "channel": channel})
 
 
 EMPTY_STATE = card("empty", "Your verdict will appear here",
                    "<ol><li>Choose where the ad will run.</li><li>Paste the headline, body and call-to-action.</li>"
-                   "<li>Press <b>Check this ad</b>. In about 10 seconds you'll see whether it can ship, who owns it, what breaks the channel's rules, and a fix.</li></ol>"
+                   "<li>Press <b>Check this ad</b>. In about 10 seconds you'll see whether it can ship, who owns it, what breaks the channel's rules, and a fix.</li>"
+                   "<li>Happy with the verdict? Press <b>Hand off</b> to send it to the owning team as a HubSpot task and Slack alert. Nothing is sent before that.</li></ol>"
                    "<p class='m-small'>Not sure what to paste? Click one of the examples under the form.</p>")
 
 FIELDS = ["channel", "client", "product", "headline", "body", "cta", "audience", "conv", "roi"]
@@ -236,11 +273,11 @@ EXAMPLES = {
 def fill(values):
     st.session_state.update(dict(zip(FIELDS, values)))
     st.session_state.out = EMPTY_STATE
+    st.session_state.checked = None
 
 
 def clear():
     fill([None, "", "", "", "", "", "", None, None])
-    st.session_state.send = False
 
 
 CSS = """
@@ -271,6 +308,9 @@ h1 { font-family: "Iowan Old Style", Georgia, serif !important; color: var(--m-i
 .m-foot { margin-top: 12px; font-size: .82rem; color: var(--m-muted); border-top: 1px solid var(--m-line); padding-top: 8px; }
 .m-banner { background: #faf3e3; border: 1px solid #e8d7a8; color: var(--m-warn); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; font-weight: 600; }
 .m-hint { font-size: .85rem; color: var(--m-muted); } .m-over { color: var(--m-bad); font-weight: 700; }
+.m-sent { background: #eef2e6; border: 1px solid #cdd8b8; color: var(--m-good) !important; border-radius: 8px; padding: 9px 11px; margin-bottom: 12px; font-weight: 700; }
+.m-sent span { font-weight: 500; color: var(--m-text); } .m-sent a { text-decoration: underline; }
+.m-count { margin-top: 6px; padding-top: 6px; border-top: 1px dashed #dfe4d3; font-size: .88rem; } .m-count-inline { color: var(--m-muted); }
 .m-rule { font-size: .88rem; background: var(--m-paper); border: 1px solid var(--m-line); border-radius: 8px; padding: 7px 10px; color: var(--m-text); margin: -6px 0 10px; }
 @media (max-width: 640px) { .m-grid { grid-template-columns: 1fr; } }
 </style>
@@ -300,8 +340,6 @@ with left:
         c1, c2 = st.columns(2)
         conv = c1.number_input("Conversion rate (%)", key="conv", value=None, min_value=0.0, step=0.5)
         roi = c2.number_input("ROI (x)", key="roi", value=None, min_value=0.0, step=0.5)
-    send = st.checkbox("Send to my team (create the HubSpot task and Slack alert)", key="send",
-                       help="Leave unticked to preview the verdict without notifying anyone.")
     b1, b2, _ = st.columns([2, 1, 2])
     go = b1.button("Check this ad", type="primary", width="stretch")
     b2.button("Clear", on_click=clear, width="stretch")
@@ -310,13 +348,37 @@ with left:
         for label, values in EXAMPLES.items():
             st.button(label, on_click=fill, args=(values,), width="content")
 
+inputs = (channel, client, product, headline, body, cta, audience, conv, roi)
+
+
+def run(send: bool):
+    info = {}
+    try:
+        st.session_state.out = check_ad(*inputs, send, st.context.ip_address or "anon", info)
+    except Exception:  # never show a stack trace to the user
+        info = {}
+        st.session_state.out = problem("Something went wrong on our side", "The app hit an unexpected problem. Nothing was sent to your team.",
+                                       "Please try again in a minute.")
+    st.session_state.checked = dict(info, sig=inputs, sent=send) if info else None
+
+
 with right:
     if go:
         with st.spinner("Checking your ad. This takes about 10 seconds…"):
-            try:
-                st.session_state.out = check_ad(channel, client, product, headline, body, cta, audience, conv, roi, send,
-                                                st.context.ip_address or "anon")
-            except Exception:  # never show a stack trace to the user
-                st.session_state.out = problem("Something went wrong on our side", "The app hit an unexpected problem. Nothing was sent to your team.",
-                                               "Please try again in a minute.")
+            run(send=False)
+    # The hand-off comes after the verdict (user tests: all three testers looked for it there, not on the form).
+    chk = st.session_state.get("checked")
+    slot = st.empty()
+    if chk and not chk["sent"]:
+        if chk["sig"] == inputs:
+            with slot.container():
+                label = f"Hand off to {chk['team']} {HANDOFF_VERB.get(chk['decision'], '')}".strip()
+                handoff = st.button(label, type="primary", key="handoff", width="stretch")
+                st.caption("Creates a task in HubSpot and posts an alert in Slack #campaign-review. Nothing is sent until you press it.")
+            if handoff:
+                slot.empty()
+                with st.spinner(f"Handing off to {chk['team']}…"):
+                    run(send=True)
+        else:
+            slot.caption("You changed the ad after checking it. Press **Check this ad** again before handing it off.")
     st.markdown(st.session_state.out, unsafe_allow_html=True)
