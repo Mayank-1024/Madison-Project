@@ -320,7 +320,7 @@ h1 { font-family: "Iowan Old Style", Georgia, serif !important; color: var(--m-i
 st.session_state.setdefault("out", EMPTY_STATE)
 st.markdown(CSS, unsafe_allow_html=True)
 st.title("Madison Automation Agent")
-st.markdown("<p class='m-lede'>Check a new ad against its channel's rules, see who should own it, and get a ready-to-use fix. "
+st.markdown("<p class='m-lede'>Check a new ad against its channel's rules, see who should own it, and get a suggested fix. "
             "Built for agency marketing-ops teams.</p>", unsafe_allow_html=True)
 
 left, right = st.columns([5, 6], gap="large")
