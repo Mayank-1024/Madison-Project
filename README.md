@@ -4,6 +4,8 @@
 
 Built with **n8n** (self-hosted) and **Claude Haiku 4.5**, connected to **HubSpot, Slack, Google Sheets and Gmail**. Assignment 4 of INFO7375 *Branding & AI* (Northeastern University) by Mayank Bhadrasen. It extends the open-source [Madison](https://github.com/Humanitariansai/Madison) AI marketing framework.
 
+**Published:** [official n8n template](https://n8n.io/workflows/20946-review-ai-ad-copy-with-claude-and-route-outcomes-to-hubspot-and-slack/) (accepted into n8n's template library; import it and run it on your own n8n) · **Walkthrough:** [demo_walkthrough.pdf](demo_walkthrough.pdf)
+
 ![Executive summary](figma/exec_summary.png)
 
 ---
